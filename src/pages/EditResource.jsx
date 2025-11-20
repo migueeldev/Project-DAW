@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Upload, Link as LinkIcon, Tag, BookOpen } from 'lucide-react';
-import { crearRecurso, listarMaterias } from '../services/api';
+import { useNavigate, useParams } from 'react-router-dom';
+import { Save, Link as LinkIcon, Tag, BookOpen, ArrowLeft } from 'lucide-react';
+import { obtenerRecurso, editarRecurso, listarMaterias } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
-function AddResource() {
+function EditResource() {
+  const { id } = useParams();
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, usuario } = useAuth();
 
   const [formData, setFormData] = useState({
     titulo: '',
@@ -20,51 +21,60 @@ function AddResource() {
 
   const [materias, setMaterias] = useState([]);
   const [mostrarOtraMateria, setMostrarOtraMateria] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
-  // Verificar autenticación al cargar
+  // Verificar autenticación y cargar recurso
   useEffect(() => {
     if (!isAuthenticated()) {
-      alert('Debes iniciar sesión para subir recursos');
+      alert('Debes iniciar sesión');
       navigate('/login');
+      return;
     }
-  }, [isAuthenticated, navigate]);
-
-  // Cargar materias desde el backend
-  useEffect(() => {
-    const cargarMaterias = async () => {
-      try {
-        const data = await listarMaterias();
-        const nombresMaterias = data.materias.map(m => m.nombre);
-        setMaterias([...nombresMaterias, 'Otra']);
-      } catch (err) {
-        console.error('Error al cargar materias:', err);
-        // Usar materias por defecto si falla
-        setMaterias([
-          'Cálculo Diferencial',
-          'Cálculo Integral',
-          'Cálculo Vectorial',
-          'Álgebra Lineal',
-          'Ecuaciones Diferenciales',
-          'Física General',
-          'Fundamentos de Programación',
-          'Estructura de Datos',
-          'Desarrollo de Aplicaciones Web',
-          'Taller de Bases de Datos',
-          'Redes de Computadoras',
-          'Matemáticas Discretas',
-          'Probabilidad y Estadística',
-          'Química',
-          'Programación Orientada a Objetos',
-          'Programacion Web',
-          'Tesis de Licenciatura',
-          'Otra'
-        ]);
-      }
-    };
+    cargarRecurso();
     cargarMaterias();
-  }, []);
+  }, [id]);
+
+  const cargarRecurso = async () => {
+    setLoading(true);
+    try {
+      const data = await obtenerRecurso(id);
+      const recurso = data.recurso;
+      
+      // Verificar que el usuario sea el autor
+      if (recurso.autor_id !== usuario.id) {
+        alert('No tienes permiso para editar este recurso');
+        navigate('/');
+        return;
+      }
+
+      setFormData({
+        titulo: recurso.titulo,
+        descripcion: recurso.descripcion,
+        link: recurso.link,
+        materia: recurso.materia,
+        materiaPersonalizada: '',
+        nivel: recurso.nivel,
+        etiquetas: recurso.etiquetas || ''
+      });
+    } catch (err) {
+      setError('Error al cargar el recurso');
+      console.error('Error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const cargarMaterias = async () => {
+    try {
+      const data = await listarMaterias();
+      const nombresMaterias = data.materias.map(m => m.nombre);
+      setMaterias([...nombresMaterias, 'Otra']);
+    } catch (err) {
+      console.error('Error al cargar materias:', err);
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -89,11 +99,10 @@ function AddResource() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
+    setSaving(true);
     setError('');
 
     try {
-      // Usar materiaPersonalizada si seleccionó "Otra"
       const materiaFinal = formData.materia === 'Otra' 
         ? formData.materiaPersonalizada 
         : formData.materia;
@@ -107,30 +116,50 @@ function AddResource() {
         etiquetas: formData.etiquetas
       };
 
-      await crearRecurso(recursoData);
+      await editarRecurso(id, recursoData);
       
-      alert('¡Recurso subido exitosamente!');
-      navigate('/');
+      alert('¡Recurso actualizado exitosamente!');
+      navigate(`/recurso/${id}`);
       
     } catch (err) {
-      console.error('Error al crear recurso:', err);
-      setError(err.response?.data?.error || 'Error al subir el recurso. Verifica tu conexión.');
+      console.error('Error al editar recurso:', err);
+      setError(err.response?.data?.error || 'Error al actualizar el recurso');
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <p className="mt-4 text-gray-600">Cargando recurso...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">
       <div className="max-w-2xl mx-auto">
+        {/* Botón volver */}
+        <button
+          onClick={() => navigate(`/recurso/${id}`)}
+          className="flex items-center gap-2 text-gray-600 hover:text-gray-800 mb-6 transition-colors"
+        >
+          <ArrowLeft size={20} />
+          <span>Volver</span>
+        </button>
+
         <div className="bg-white rounded-lg shadow-lg p-8">
           {/* Header */}
           <div className="mb-6">
             <h1 className="text-3xl font-bold text-gray-800 mb-2">
-              📤 Subir Nuevo Recurso
+              ✏️ Editar Recurso
             </h1>
             <p className="text-gray-600">
-              Comparte recursos académicos con la comunidad estudiantil
+              Actualiza la información del recurso
             </p>
           </div>
 
@@ -156,7 +185,6 @@ function AddResource() {
                 value={formData.titulo}
                 onChange={handleChange}
                 required
-                placeholder="Ej: Guía rápida de Derivadas"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -173,7 +201,6 @@ function AddResource() {
                 onChange={handleChange}
                 required
                 rows="4"
-                placeholder="Describe el contenido, nivel de dificultad, y por qué es útil..."
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -191,12 +218,8 @@ function AddResource() {
                 value={formData.link}
                 onChange={handleChange}
                 required
-                placeholder="https://drive.google.com/..."
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
-              <p className="text-xs text-gray-500 mt-1">
-                Google Drive, YouTube, Dropbox, etc.
-              </p>
             </div>
 
             {/* Materia */}
@@ -221,7 +244,6 @@ function AddResource() {
                 ))}
               </select>
               
-              {/* Campo de texto si selecciona "Otra" */}
               {mostrarOtraMateria && (
                 <div className="mt-3">
                   <input
@@ -229,14 +251,11 @@ function AddResource() {
                     name="materiaPersonalizada"
                     value={formData.materiaPersonalizada}
                     onChange={handleChange}
-                    placeholder="Escribe el nombre de la categoría o materia"
+                    placeholder="Escribe el nombre de la materia"
                     required
                     maxLength="50"
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Ejemplo: "Seminario de Tesis", "Metodología de la Investigación", etc.
-                  </p>
                 </div>
               )}
             </div>
@@ -276,26 +295,23 @@ function AddResource() {
                 placeholder="derivadas, ejercicios, guía (separadas por comas)"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
-              <p className="text-xs text-gray-500 mt-1">
-                Separa las etiquetas con comas
-              </p>
             </div>
 
             {/* Botones */}
             <div className="flex gap-4 pt-4">
               <button
                 type="submit"
-                disabled={loading}
+                disabled={saving}
                 className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"
               >
-                <Upload size={20} />
-                {loading ? 'Subiendo...' : 'Subir Recurso'}
+                <Save size={20} />
+                {saving ? 'Guardando...' : 'Guardar Cambios'}
               </button>
               
               <button
                 type="button"
-                onClick={() => navigate('/')}
-                disabled={loading}
+                onClick={() => navigate(`/recurso/${id}`)}
+                disabled={saving}
                 className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium disabled:opacity-50"
               >
                 Cancelar
@@ -308,4 +324,4 @@ function AddResource() {
   );
 }
 
-export default AddResource;
+export default EditResource;

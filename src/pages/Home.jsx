@@ -1,157 +1,86 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import ResourceCard from '../components/Resources/ResourceCard';
 import { Search, Filter, SlidersHorizontal } from 'lucide-react';
-
-// Datos simulados de recursos
-const mockResources = [
-  {
-    id: 1,
-    titulo: "Guía rápida de Derivadas con ejemplos resueltos",
-    descripcion: "Apuntes en PDF con fórmulas básicas y 10 ejercicios resueltos, ideal para repasar antes de exámenes. Incluye teoría fundamental y casos prácticos.",
-    link: "https://drive.google.com/example",
-    materia: "Cálculo Diferencial",
-    nivel: "Principiante",
-    etiquetas: ["derivadas", "ejercicios", "guía rápida"],
-    votos: 45,
-    votosNegativos: 3,
-    autor: "María González",
-    fecha: "2025-03-15",
-    comentarios: 12
-  },
-  {
-    id: 2,
-    titulo: "Resumen de Álgebra Lineal – Capítulo 1 al 3",
-    descripcion: "Conceptos clave de vectores, matrices y sistemas de ecuaciones lineales. Perfecto para preparar el primer parcial.",
-    link: "https://drive.google.com/example2",
-    materia: "Álgebra Lineal",
-    nivel: "Intermedio",
-    etiquetas: ["resumen", "matrices", "vectores"],
-    votos: 67,
-    votosNegativos: 5,
-    autor: "Carlos Ramírez",
-    fecha: "2025-03-10",
-    comentarios: 8
-  },
-  {
-    id: 3,
-    titulo: "Tutorial de React Hooks - useState y useEffect",
-    descripcion: "Video tutorial explicando los hooks más importantes de React con ejemplos prácticos y casos de uso reales.",
-    link: "https://youtube.com/example",
-    materia: "Desarrollo de Aplicaciones Web",
-    nivel: "Básico",
-    etiquetas: ["react", "tutorial", "hooks", "javascript"],
-    votos: 89,
-    votosNegativos: 2,
-    autor: "Ana López",
-    fecha: "2025-03-18",
-    comentarios: 24
-  },
-  {
-    id: 4,
-    titulo: "Ejercicios resueltos de Integrales",
-    descripcion: "Colección de 50 ejercicios de integrales definidas e indefinidas con solución paso a paso.",
-    link: "https://drive.google.com/example3",
-    materia: "Cálculo Integral",
-    nivel: "Intermedio",
-    etiquetas: ["integrales", "ejercicios", "soluciones"],
-    votos: 73,
-    votosNegativos: 4,
-    autor: "Pedro Sánchez",
-    fecha: "2025-03-12",
-    comentarios: 15
-  },
-  {
-    id: 5,
-    titulo: "Introducción a Python para principiantes",
-    descripcion: "Curso completo de Python desde cero con ejemplos prácticos y proyectos finales.",
-    link: "https://youtube.com/example2",
-    materia: "Programación Orientada a Objetos",
-    nivel: "Principiante",
-    etiquetas: ["python", "tutorial", "principiantes"],
-    votos: 120,
-    votosNegativos: 6,
-    autor: "Laura Martínez",
-    fecha: "2025-03-20",
-    comentarios: 32
-  },
-  {
-    id: 6,
-    titulo: "Transformadas de Laplace - Formulario",
-    descripcion: "Formulario completo con todas las transformadas de Laplace más comunes y propiedades.",
-    link: "https://drive.google.com/example4",
-    materia: "Ecuaciones Diferenciales",
-    nivel: "Avanzado",
-    etiquetas: ["laplace", "formulario", "transformadas"],
-    votos: 54,
-    votosNegativos: 2,
-    autor: "Roberto López",
-    fecha: "2025-03-08",
-    comentarios: 9
-  }
-];
+import { listarRecursos, listarMaterias, votarRecurso } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 function Home() {
-  const [resources, setResources] = useState(mockResources);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { isAuthenticated } = useAuth();
+  
+  const [resources, setResources] = useState([]);
+  const [materias, setMaterias] = useState(['Todas']);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  
+  const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
   const [selectedMateria, setSelectedMateria] = useState('Todas');
   const [selectedNivel, setSelectedNivel] = useState('Todos');
   const [sortBy, setSortBy] = useState('recientes');
   const [showFilters, setShowFilters] = useState(false);
 
-  // Obtener lista única de materias
-  const materias = ['Todas', ...new Set(mockResources.map(r => r.materia))];
   const niveles = ['Todos', 'Principiante', 'Básico', 'Intermedio', 'Avanzado'];
 
-  // Filtrar y ordenar recursos
-  const filteredResources = useMemo(() => {
-    let filtered = [...resources];
-
-    // Filtrar por búsqueda
-    if (searchTerm) {
-      filtered = filtered.filter(resource =>
-        resource.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        resource.descripcion.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        resource.etiquetas.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
-      );
-    }
-
-    // Filtrar por materia
-    if (selectedMateria !== 'Todas') {
-      filtered = filtered.filter(resource => resource.materia === selectedMateria);
-    }
-
-    // Filtrar por nivel
-    if (selectedNivel !== 'Todos') {
-      filtered = filtered.filter(resource => resource.nivel === selectedNivel);
-    }
-
-    // Ordenar
-    if (sortBy === 'votos') {
-      filtered.sort((a, b) => (b.votos - b.votosNegativos) - (a.votos - a.votosNegativos));
-    } else if (sortBy === 'recientes') {
-      filtered.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
-    } else if (sortBy === 'comentarios') {
-      filtered.sort((a, b) => b.comentarios - a.comentarios);
-    }
-
-    return filtered;
-  }, [resources, searchTerm, selectedMateria, selectedNivel, sortBy]);
-
-  const handleVote = (resourceId, voteType) => {
-    setResources(prev => prev.map(resource => {
-      if (resource.id === resourceId) {
-        if (voteType === 'up') {
-          return { ...resource, votos: resource.votos + 1 };
-        } else if (voteType === 'down') {
-          return { ...resource, votosNegativos: resource.votosNegativos + 1 };
-        }
+  // Cargar materias al iniciar
+  useEffect(() => {
+    const cargarMaterias = async () => {
+      try {
+        const data = await listarMaterias();
+        const nombresMaterias = data.materias.map(m => m.nombre);
+        setMaterias(['Todas', ...nombresMaterias]);
+      } catch (err) {
+        console.error('Error al cargar materias:', err);
       }
-      return resource;
-    }));
+    };
+    cargarMaterias();
+  }, []);
+
+  // Cargar recursos cuando cambian los filtros
+  useEffect(() => {
+    cargarRecursos();
+  }, [selectedMateria, selectedNivel, searchTerm, sortBy]);
+
+  const cargarRecursos = async () => {
+    setLoading(true);
+    setError('');
+    
+    try {
+      const filtros = {
+        materia: selectedMateria,
+        nivel: selectedNivel,
+        search: searchTerm,
+        sortBy: sortBy
+      };
+      
+      const data = await listarRecursos(filtros);
+      setResources(data.recursos);
+    } catch (err) {
+      setError('Error al cargar recursos. Verifica que el servidor esté corriendo.');
+      console.error('Error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVote = async (resourceId, voteType) => {
+    if (!isAuthenticated()) {
+      alert('Debes iniciar sesión para votar');
+      return;
+    }
+
+    try {
+      await votarRecurso(resourceId, voteType);
+      // Recargar recursos para actualizar votos
+      cargarRecursos();
+    } catch (err) {
+      alert('Error al procesar voto');
+      console.error('Error:', err);
+    }
   };
 
   const handleViewDetails = (resourceId) => {
-    alert(`Ver detalles del recurso ${resourceId}\n(Próximamente: página de detalle)`);
+    window.location.href = `/recurso/${resourceId}`;
   };
 
   const clearFilters = () => {
@@ -159,6 +88,12 @@ function Home() {
     setSelectedMateria('Todas');
     setSelectedNivel('Todos');
     setSortBy('recientes');
+    setSearchParams({});
+  };
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    // El useEffect se encargará de recargar
   };
 
   return (
@@ -175,12 +110,19 @@ function Home() {
           </p>
         </div>
 
+        {/* Mensaje de error */}
+        {error && (
+          <div className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+            {error}
+          </div>
+        )}
+
         {/* Barra de búsqueda */}
         <div className="bg-white rounded-lg shadow-md p-4 mb-6">
           <div className="flex flex-col md:flex-row gap-4">
             
             {/* Input de búsqueda */}
-            <div className="flex-1 relative">
+            <form onSubmit={handleSearch} className="flex-1 relative">
               <input
                 type="text"
                 placeholder="Buscar por título, descripción o etiquetas..."
@@ -189,7 +131,7 @@ function Home() {
                 className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
               <Search className="absolute left-3 top-2.5 text-gray-400" size={20} />
-            </div>
+            </form>
 
             {/* Botón de filtros (móvil) */}
             <button
@@ -274,32 +216,38 @@ function Home() {
         </div>
 
         {/* Contador de resultados */}
-        <div className="mb-4 text-gray-600">
-          {filteredResources.length === 0 ? (
-            <p className="text-center py-8">
-              ❌ No se encontraron recursos con los filtros seleccionados
-            </p>
-          ) : (
-            <p>
-              Mostrando <span className="font-bold">{filteredResources.length}</span> recursos
-              {filteredResources.length !== resources.length && (
-                <span className="text-gray-500"> de {resources.length} totales</span>
+        {loading ? (
+          <div className="text-center py-8">
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            <p className="mt-4 text-gray-600">Cargando recursos...</p>
+          </div>
+        ) : (
+          <>
+            <div className="mb-4 text-gray-600">
+              {resources.length === 0 ? (
+                <p className="text-center py-8">
+                  ❌ No se encontraron recursos con los filtros seleccionados
+                </p>
+              ) : (
+                <p>
+                  Mostrando <span className="font-bold">{resources.length}</span> recursos
+                </p>
               )}
-            </p>
-          )}
-        </div>
+            </div>
 
-        {/* Grid de recursos */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredResources.map(resource => (
-            <ResourceCard
-              key={resource.id}
-              resource={resource}
-              onVote={handleVote}
-              onViewDetails={handleViewDetails}
-            />
-          ))}
-        </div>
+            {/* Grid de recursos */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {resources.map(resource => (
+                <ResourceCard
+                  key={resource.id}
+                  resource={resource}
+                  onVote={handleVote}
+                  onViewDetails={handleViewDetails}
+                />
+              ))}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

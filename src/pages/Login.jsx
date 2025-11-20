@@ -1,10 +1,15 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Mail, Lock, User } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 function Login() {
   const navigate = useNavigate();
+  const { login, register } = useAuth();
   const [isRegistering, setIsRegistering] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  
   const [formData, setFormData] = useState({
     nombre: '',
     email: '',
@@ -17,14 +22,35 @@ function Login() {
       ...prev,
       [name]: value
     }));
+    setError(''); // Limpiar error al escribir
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log(isRegistering ? 'Registrando:' : 'Iniciando sesión:', formData);
-    
-    alert(`${isRegistering ? 'Registro' : 'Login'} exitoso (aún sin backend)`);
-    navigate('/');
+    setLoading(true);
+    setError('');
+
+    try {
+      let result;
+      
+      if (isRegistering) {
+        // Registro
+        result = await register(formData.nombre, formData.email, formData.password);
+      } else {
+        // Login
+        result = await login(formData.email, formData.password);
+      }
+
+      if (result.success) {
+        navigate('/');
+      } else {
+        setError(result.error);
+      }
+    } catch (err) {
+      setError('Error de conexión. Verifica que el servidor esté corriendo.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -42,6 +68,13 @@ function Login() {
               : 'Accede a tu biblioteca digital'}
           </p>
         </div>
+
+        {/* Mensaje de error */}
+        {error && (
+          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+            {error}
+          </div>
+        )}
 
         {/* Formulario */}
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -97,24 +130,38 @@ function Login() {
               value={formData.password}
               onChange={handleChange}
               required
+              minLength="6"
               placeholder="••••••••"
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
+            {isRegistering && (
+              <p className="text-xs text-gray-500 mt-1">
+                Mínimo 6 caracteres
+              </p>
+            )}
           </div>
 
           {/* Botón Submit */}
           <button
             type="submit"
-            className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium mt-6"
+            disabled={loading}
+            className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium mt-6 disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
-            {isRegistering ? 'Crear Cuenta' : 'Iniciar Sesión'}
+            {loading 
+              ? 'Procesando...' 
+              : (isRegistering ? 'Crear Cuenta' : 'Iniciar Sesión')
+            }
           </button>
         </form>
 
         {/* Toggle Login/Register */}
         <div className="text-center mt-6">
           <button
-            onClick={() => setIsRegistering(!isRegistering)}
+            onClick={() => {
+              setIsRegistering(!isRegistering);
+              setError('');
+              setFormData({ nombre: '', email: '', password: '' });
+            }}
             className="text-blue-600 hover:text-blue-700 text-sm"
           >
             {isRegistering 
