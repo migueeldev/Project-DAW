@@ -60,7 +60,7 @@ const listarRecursos = async (req, res) => {
     } else if (sortBy === 'comentarios') {
       query += ' ORDER BY comentarios DESC';
     } else {
-      query += ' ORDER BY r.fecha_creacion DESC'; // Por defecto: más recientes
+      query += ' ORDER BY r.fecha_creacion DESC'; // Por defecto: más recientes muestros primero los recursos mas nuevos
     }
     
     const resultado = await pool.query(query, params);
@@ -308,7 +308,7 @@ const eliminarRecurso = async (req, res) => {
 const votarRecurso = async (req, res) => {
   try {
     const { id } = req.params;
-    const { tipo } = req.body; // 'up' o 'down'
+    const { tipo } = req.body; // 'up' o 'down' like o dislike
     const usuarioId = req.user.id;
     
     // Validar tipo de voto

@@ -9,7 +9,7 @@ const pool = new Pool({
   port: process.env.DB_PORT,
 });
 
-// Probar conexión
+// Probar conexión a la base de datos, esto muestra un mensaje en la consola
 pool.on('connect', () => {
   console.log('✅ Conectado a PostgreSQL');
 });

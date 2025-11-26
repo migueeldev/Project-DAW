@@ -1,9 +1,18 @@
 import axios from 'axios';
 
 // URL base de la API (cambia esto según tu configuración)
-const API_URL = 'http://localhost:5000/api';
+//const API_URL = 'http://localhost:5000/api';
 
-// Crear instancia de axios con configuración base
+//const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
+// URL base de la API - En Docker usa la ruta del proxy
+//const API_URL = '/api';  // ← Cambiar a esto para Docker
+
+// O si quieres que funcione en desarrollo también:
+const API_URL = import.meta.env.VITE_API_URL || 
+  (import.meta.env.MODE === 'production' ? '/api' : 'http://localhost:5000/api');
+
+  // Crear instancia de axios con configuración base
 const api = axios.create({
   baseURL: API_URL,
   headers: {
