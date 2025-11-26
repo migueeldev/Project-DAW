@@ -1,21 +1,21 @@
-# 📚 Biblioteca Digital Colaborativa
+# Biblioteca Digital Colaborativa
 
-Sistema web para compartir y gestionar recursos académicos entre estudiantes.
+Aplicación web para compartir y gestionar recursos académicos entre estudiantes.
 
-## 🎯 Objetivo
+## Objetivo
 
-Crear una plataforma colaborativa donde estudiantes puedan compartir recursos académicos (apuntes, guías, videos, etc.) organizados por materias, con sistema de votación y comentarios para validar la calidad del contenido.
+Crear una aplicación web donde estudiantes puedan compartir recursos académicos (apuntes, guías, videos, etc.) organizados por materias, con sistema de votación y comentarios para validar la calidad del contenido.
 
-## ✨ Características Principales
+## Características Principales
 
 ### Funcionalidades Implementadas:
-- ✅ **Autenticación de usuarios** (Registro y Login con JWT)
-- ✅ **CRUD completo de recursos** académicos
-- ✅ **Sistema de votación** (👍 likes / 👎 dislikes)
-- ✅ **Sistema de comentarios** en cada recurso
-- ✅ **Filtros avanzados** (por materia, nivel, búsqueda)
-- ✅ **Dashboard personal** para gestionar tus recursos
-- ✅ **Materias dinámicas** (crea nuevas categorías)
+- **Autenticación de usuarios** (Registro y Login con JWT)
+- **CRUD completo de recursos** académicos
+- **Sistema de votación** (👍 likes / 👎 dislikes)
+- **Sistema de comentarios** en cada recurso
+- **Filtros avanzados** (por materia, nivel, búsqueda)
+- **Dashboard personal** para gestionar tus recursos
+- **Materias dinámicas** (crea nuevas categorías)
 
 ### Tecnologías Utilizadas:
 
@@ -39,7 +39,7 @@ Crear una plataforma colaborativa donde estudiantes puedan compartir recursos ac
 - Nginx (servidor web)
 - Multi-stage builds
 
-## 🚀 Instalación y Ejecución
+## Instalación y Ejecución
 
 ### Requisitos Previos:
 - **Docker Desktop** instalado
@@ -80,7 +80,7 @@ docker-compose down -v
 docker-compose up --build
 ```
 
-## 🗄️ Base de Datos
+## Base de Datos
 
 ### Tablas implementadas:
 - **usuarios** - Información de usuarios registrados
@@ -90,26 +90,26 @@ docker-compose up --build
 - **votos** - Sistema de votación
 
 
-## 🧪 Casos de Uso Implementados
+## Casos de Uso Implementados
 
 1. **Usuario Visitante (sin login):**
-   - ✅ Ver todos los recursos
-   - ✅ Filtrar y buscar recursos
-   - ✅ Leer comentarios
-   - ❌ NO puede: votar, comentar, subir recursos
+   - Ver todos los recursos
+   - Filtrar y buscar recursos
+   - Leer comentarios
+   - NO puede: votar, comentar, subir recursos
 
 2. **Usuario Registrado:**
-   - ✅ Todo lo anterior +
-   - ✅ Subir nuevos recursos
-   - ✅ Votar recursos (like/dislike)
-   - ✅ Comentar en recursos
-   - ✅ Editar sus propios recursos
-   - ✅ Eliminar sus propios recursos
-   - ✅ Ver dashboard personal con estadísticas
+   - Todo lo anterior +
+   - Subir nuevos recursos
+   - Votar recursos (like/dislike)
+   - Comentar en recursos
+   - Editar sus propios recursos
+   - Eliminar sus propios recursos
+   - Ver dashboard personal con estadísticas
 
-## 🔮 Mejoras Futuras (No implementadas actualmente)
+## Mejoras Futuras (No implementadas actualmente)
 
-- [ ] Sistema de reportes de enlaces rotos con notificación por email posiblmente con nodeemailer
-- [ ] Crear funcionalidad de uploads(al menos localmente)
-- [ ] Sistema de favoritos/guardados
-- [ ] Integración con Google Drive API o algun otro servicio externo
+- Sistema de reportes de enlaces rotos con notificación por email posiblmente con nodeemailer
+- Crear funcionalidad de uploads(al menos localmente)
+- Sistema de favoritos/guardados
+- Integración con Google Drive API o algun otro servicio externo
