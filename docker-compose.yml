@@ -1,50 +1,24 @@
 version: '3.8'
 
 services:
-  # Base de datos PostgreSQL
-  database:
-    image: postgres:15-alpine
-    container_name: biblioteca-db
-    environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: admin123
-      POSTGRES_DB: biblioteca_digital
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
-    networks:
-      - biblioteca-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U admin -d biblioteca_digital"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  # Backend (Node.js + Express)
+  # Backend (Node.js + Express) - Ahora usa Neon
   backend:
     build: ./backend
     container_name: biblioteca-backend
     environment:
       NODE_ENV: production
       PORT: 5000
-      DB_USER: admin
-      DB_HOST: database
-      DB_NAME: biblioteca_digital
-      DB_PASSWORD: admin123
-      DB_PORT: 5432
-      JWT_SECRET: mi_secreto_super_seguro_cambiar_en_produccion_12345678
-      JWT_EXPIRES_IN: 7d
+      # Usa la variable de entorno DATABASE_URL de tu .env
+      DATABASE_URL: ${DATABASE_URL}
+      JWT_SECRET: ${JWT_SECRET:-mi_secreto_super_seguro_cambiar_en_produccion_12345678}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
     ports:
       - "5000:5000"
-    depends_on:
-      database:
-        condition: service_healthy
     networks:
       - biblioteca-network
     restart: unless-stopped
-
+    # Ya no depende de la base de datos local
+    
   # Frontend (React + Vite + Nginx)
   frontend:
     build: ./frontend
@@ -57,10 +31,7 @@ services:
       - biblioteca-network
     restart: unless-stopped
 
-volumes:
-  postgres_data:
-    driver: local
-
+# Ya no necesitas el volumen de postgres
 networks:
   biblioteca-network:
     driver: bridge
