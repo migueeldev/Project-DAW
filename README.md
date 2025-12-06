@@ -49,10 +49,13 @@ Crear una aplicación web donde estudiantes puedan compartir recursos académico
 
 1. **Clonar o descargar el proyecto:**
 ```bash
+
+git clone https://github.com/migueeldev/Project-DAW
+
 cd biblioteca-digital
 ```
 
-2. **Levantar todos los servicios con Docker Compose:**
+2. **Levantar todos los servicios con Docker Compose (primera vez):**
 ```bash
 docker-compose up --build
 ```
@@ -60,15 +63,21 @@ docker-compose up --build
 3. **Acceder a la aplicación:**
 - **Frontend (App web):** http://localhost
 - **Backend (API):** http://localhost:5000
-- **Base de datos:** localhost:5432
+- **Base de datos (anteriormente):** localhost:5432
+- **Actualmente base de datos en la Nube utilizando el serivicio de Neon**
 
 ### Comandos de docker que fueron útiles:
 ```bash
 # Detener todos los servicios
 docker-compose down
 
+#Levantar Docker nuevamente(sin haber hecho cambios en el codigo)
+docker-compose up -d
+
 # Ver logs en tiempo real
 docker-compose logs -f
+#Ejemplo:
+docker-compose logs -f backend
 
 # Reiniciar un servicio específico
 docker-compose restart backend
